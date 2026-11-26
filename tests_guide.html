@@ -1,0 +1,402 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="A practical, beginner-friendly guide to writing Python tests with pytest.">
+  <title>Python Testing: A Practical Guide</title>
+  <style>
+    :root {
+      color-scheme: light;
+      --ink: #172033;
+      --muted: #526078;
+      --paper: #fff;
+      --canvas: #f3f6fb;
+      --line: #dce3ee;
+      --accent: #2457c5;
+      --accent-soft: #eaf0ff;
+      --code: #101827;
+      --code-ink: #e8eef8;
+      --note: #f0f7ff;
+      --warning: #fff7e6;
+      font: 16px/1.65 system-ui, -apple-system, "Segoe UI", sans-serif;
+    }
+    * { box-sizing: border-box; }
+    body { margin: 0; color: var(--ink); background: var(--canvas); }
+    header {
+      padding: 3.5rem 1.25rem 2.8rem;
+      color: white;
+      background: linear-gradient(130deg, #173b84, #2869cd);
+    }
+    header > div, main { width: min(940px, 100% - 2rem); margin: 0 auto; }
+    header p { max-width: 700px; margin-bottom: 0; color: #e5edff; }
+    h1 { margin: 0; font-size: clamp(2rem, 5vw, 3.35rem); line-height: 1.12; }
+    h2 { margin-top: 2.8rem; padding-bottom: .45rem; border-bottom: 1px solid var(--line); font-size: 1.7rem; }
+    h3 { margin-top: 1.8rem; font-size: 1.2rem; }
+    main { padding: 1.5rem 0 4rem; }
+    section, nav.contents {
+      margin: 1rem 0;
+      padding: 1.35rem clamp(1rem, 4vw, 2rem);
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      background: var(--paper);
+      box-shadow: 0 5px 20px rgb(23 32 51 / 4%);
+    }
+    nav.contents ol { columns: 2; padding-left: 1.3rem; }
+    a { color: var(--accent); }
+    code { font: .92em ui-monospace, SFMono-Regular, Consolas, monospace; }
+    p code, li code, td code { padding: .08em .3em; border-radius: 4px; background: #edf1f7; }
+    pre {
+      overflow-x: auto;
+      padding: 1rem 1.15rem;
+      border-radius: 8px;
+      color: var(--code-ink);
+      background: var(--code);
+      line-height: 1.5;
+      tab-size: 4;
+    }
+    pre code { color: inherit; font-size: .9rem; }
+    .callout { padding: .8rem 1rem; border-left: 4px solid var(--accent); border-radius: 4px; background: var(--note); }
+    .warning { border-left-color: #b77900; background: var(--warning); }
+    .pill { display: inline-block; margin: .15rem 0; padding: .12rem .55rem; border-radius: 99px; color: #193f91; background: var(--accent-soft); font-size: .85rem; font-weight: 650; }
+    table { width: 100%; border-collapse: collapse; }
+    th, td { padding: .65rem; border-bottom: 1px solid var(--line); text-align: left; vertical-align: top; }
+    th { background: #f5f7fb; }
+    footer { padding: 1.5rem; color: var(--muted); text-align: center; }
+    @media (max-width: 620px) {
+      nav.contents ol { columns: 1; }
+      table { display: block; overflow-x: auto; }
+      header { padding-top: 2.5rem; }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <div>
+      <span class="pill">Python · pytest · beginner-friendly</span>
+      <h1>Python Testing:<br>A Practical Guide</h1>
+      <p>You already know how to program. This guide teaches you how to check that your code behaves correctly, catch regressions, and make changes with confidence—one small test at a time.</p>
+    </div>
+  </header>
+
+  <main>
+    <nav class="contents" aria-label="Contents">
+      <strong>In this guide</strong>
+      <ol>
+        <li><a href="#why">Why write tests?</a></li>
+        <li><a href="#first">Your first test</a></li>
+        <li><a href="#assertions">Assertions and failures</a></li>
+        <li><a href="#cases">Choosing useful cases</a></li>
+        <li><a href="#exceptions">Testing errors</a></li>
+        <li><a href="#fixtures">Fixtures and setup</a></li>
+        <li><a href="#parametrize">Testing many inputs</a></li>
+        <li><a href="#files">Files and temporary data</a></li>
+        <li><a href="#mocking">Mocks: when and why</a></li>
+        <li><a href="#workflow">A reliable workflow</a></li>
+        <li><a href="#mistakes">Common traps</a></li>
+        <li><a href="#exercise">Practice exercise</a></li>
+        <li><a href="#unittest">pytest and unittest</a></li>
+      </ol>
+    </nav>
+
+    <section id="why">
+      <h2>1. Why write tests?</h2>
+      <p>A test is code that calls your code and checks an expected result. Instead of manually trying the same inputs after every change, you save those checks and rerun them whenever you need to.</p>
+      <ul>
+        <li><strong>Catch regressions:</strong> a change that breaks behavior that used to work.</li>
+        <li><strong>Clarify intent:</strong> a test shows what a function promises for ordinary and unusual inputs.</li>
+        <li><strong>Make refactoring safer:</strong> if the tests still pass, you have evidence that important behavior stayed intact.</li>
+        <li><strong>Find bugs sooner:</strong> a small failing example is easier to understand than a failure deep in an application.</li>
+      </ul>
+      <p>Tests do not prove that a program has no bugs. They check selected behavior. The skill is choosing cases that represent the promises your code makes.</p>
+      <p class="callout"><strong>Useful question:</strong> “If this behavior broke tomorrow, what input would reveal it, and what result should I expect?” That question often gives you the next test.</p>
+    </section>
+
+    <section id="first">
+      <h2>2. Your first test</h2>
+      <p>We’ll use <strong>pytest</strong>, a popular Python test runner. Install it once in your project’s virtual environment:</p>
+      <pre><code>python -m pip install pytest</code></pre>
+      <p>Imagine this production code lives in <code>shop.py</code>:</p>
+      <pre><code># shop.py
+def total_with_tax(price, tax_rate):
+    return round(price * (1 + tax_rate), 2)</code></pre>
+      <p>Create <code>test_shop.py</code> beside it:</p>
+      <pre><code># test_shop.py
+from shop import total_with_tax
+
+
+def test_total_with_tax_adds_tax():
+    result = total_with_tax(10.00, 0.10)
+
+    assert result == 11.00</code></pre>
+      <p>Run it from the project directory:</p>
+      <pre><code>python -m pytest</code></pre>
+      <p>Pytest discovers files named <code>test_*.py</code> or <code>*_test.py</code>, and functions whose names start with <code>test_</code>. A passing test is reported as a dot; a failure includes the assertion and useful context.</p>
+      <p>A good default structure is <strong>Arrange, Act, Assert</strong>:</p>
+      <ol>
+        <li><strong>Arrange:</strong> prepare inputs and any objects needed.</li>
+        <li><strong>Act:</strong> call the function or operation under test.</li>
+        <li><strong>Assert:</strong> check the observable result.</li>
+      </ol>
+      <p>Keep one test focused on one behavior. Clear names such as <code>test_total_with_tax_rounds_to_cents</code> make failures easier to understand.</p>
+    </section>
+
+    <section id="assertions">
+      <h2>3. Assertions and failures</h2>
+      <p>An <code>assert</code> statement says that a condition must be true. If it is false, pytest reports a failure and shows the compared values.</p>
+      <pre><code>assert total_with_tax(10.00, 0.10) == 11.00
+assert "python" in ["python", "pytest"]
+assert {"name": "Ada"} == {"name": "Ada"}</code></pre>
+      <p>Check outcomes a user or caller can observe: returned values, raised exceptions, changed state, or output written to a file. Avoid checking private implementation details such as the number of internal helper calls unless that interaction itself is part of the contract.</p>
+      <p>For floating-point calculations, binary representation can make exact decimal equality surprising. Use pytest’s approximate comparison when the expected value is a calculated float:</p>
+      <pre><code>import pytest
+
+
+def test_average():
+    assert (0.1 + 0.2) == pytest.approx(0.3)</code></pre>
+      <p>For currency, integer cents or <code>decimal.Decimal</code> may be more appropriate than floats. Testing should reflect the representation your program is meant to use.</p>
+    </section>
+
+    <section id="cases">
+      <h2>4. Choosing useful cases</h2>
+      <p>For each behavior, consider more than the happy path. A practical checklist:</p>
+      <table>
+        <thead><tr><th>Kind of case</th><th>Example question</th></tr></thead>
+        <tbody>
+          <tr><td>Typical input</td><td>Does the common valid input produce the expected result?</td></tr>
+          <tr><td>Boundary</td><td>What happens at zero, an exact limit, or an empty collection?</td></tr>
+          <tr><td>Just outside boundary</td><td>What happens one step below or above the limit?</td></tr>
+          <tr><td>Invalid input</td><td>Does the code reject it clearly, or handle it by documented design?</td></tr>
+          <tr><td>Combination</td><td>Do options still work correctly when used together?</td></tr>
+        </tbody>
+      </table>
+      <p>Suppose a discount function should reject negative prices and discounts outside 0–100 percent. A few tests might be:</p>
+      <pre><code>import pytest
+from shop import discounted_price
+
+
+def test_discount_reduces_price():
+    assert discounted_price(100, 25) == 75
+
+
+def test_zero_discount_keeps_price():
+    assert discounted_price(100, 0) == 100
+
+
+@pytest.mark.parametrize("price, discount", [
+    (-1, 10),
+    (100, -1),
+    (100, 101),
+])
+def test_invalid_discount_inputs_are_rejected(price, discount):
+    with pytest.raises(ValueError):
+        discounted_price(price, discount)</code></pre>
+      <p>Do not test every possible input. Pick cases that cover distinct rules, boundaries, and likely failure points. Tests should be small enough that a failure points you toward its cause.</p>
+    </section>
+
+    <section id="exceptions">
+      <h2>5. Testing errors and exceptions</h2>
+      <p>If invalid input is supposed to raise an exception, test that explicitly with <code>pytest.raises</code>. The code that should fail belongs inside the <code>with</code> block:</p>
+      <pre><code>import pytest
+from shop import total_with_tax
+
+
+def test_negative_tax_rate_is_rejected():
+    with pytest.raises(ValueError, match="tax rate"):
+        total_with_tax(10, -0.5)</code></pre>
+      <p>The <code>match</code> argument checks that the exception message contains a regular-expression match. Use it when the message is meaningful to callers; avoid tying tests to wording that is likely to change without changing the contract.</p>
+      <p>Choose the narrowest sensible exception type. A test that expects <code>Exception</code> could pass because of an unrelated bug, such as a typo causing <code>NameError</code>.</p>
+    </section>
+
+    <section id="fixtures">
+      <h2>6. Fixtures and setup</h2>
+      <p>A <strong>fixture</strong> provides setup that tests can reuse. It is useful when several tests need the same meaningful object or preparation—not just to avoid every repeated line.</p>
+      <pre><code>import pytest
+
+
+@pytest.fixture
+def sample_cart():
+    return {"tea": 2, "bread": 1}
+
+
+def test_cart_has_two_teas(sample_cart):
+    assert sample_cart["tea"] == 2
+
+
+def test_cart_has_bread(sample_cart):
+    assert "bread" in sample_cart</code></pre>
+      <p>Pytest creates the fixture when a test requests it by name. By default, each test gets a fresh fixture result. This isolation is helpful: one test changing its cart should not affect another test.</p>
+      <p>Fixtures can also manage resources. Code after <code>yield</code> runs as cleanup:</p>
+      <pre><code>@pytest.fixture
+def open_resource():
+    resource = acquire_resource()
+    yield resource
+    resource.close()</code></pre>
+      <p>Prefer fixtures with clear, limited responsibilities. An overly large fixture can hide what a test needs and make failures harder to diagnose.</p>
+    </section>
+
+    <section id="parametrize">
+      <h2>7. Testing many inputs</h2>
+      <p>When the same rule should hold for several input/output pairs, use <code>pytest.mark.parametrize</code>. It runs the test once per row while keeping each case visible in the report.</p>
+      <pre><code>import pytest
+from shop import total_with_tax
+
+
+@pytest.mark.parametrize("price, rate, expected", [
+    (10, 0, 10),
+    (10, 0.1, 11),
+    (1.25, 0.2, 1.5),
+])
+def test_total_with_tax(price, rate, expected):
+    assert total_with_tax(price, rate) == expected</code></pre>
+      <p>Use parameterization for variations of the same behavior. Use separate tests when the cases express different rules or need different setup; readability matters more than reducing the line count.</p>
+    </section>
+
+    <section id="files">
+      <h2>8. Testing files and temporary data</h2>
+      <p>For code that reads or writes files, pytest’s built-in <code>tmp_path</code> fixture gives each test its own temporary directory. Tests can use real file operations without touching important project files.</p>
+      <pre><code>import json
+from shop import save_receipt
+
+
+def test_save_receipt_writes_json(tmp_path):
+    output_file = tmp_path / "receipt.json"
+
+    save_receipt(output_file, {"total": 12.5})
+
+    saved_data = json.loads(output_file.read_text())
+    assert saved_data == {"total": 12.5}</code></pre>
+      <p>This checks the useful result—the file’s contents—rather than merely checking that a particular internal write method was called.</p>
+    </section>
+
+    <section id="mocking">
+      <h2>9. Mocks: when and why</h2>
+      <p>A mock is a controllable stand-in for a dependency. Mocks are useful when a test would otherwise depend on a slow, costly, unreliable, or externally managed service—for example, an email provider or payment API.</p>
+      <p>Keep most tests focused on real behavior and use mocks at boundaries. Do not mock every helper: tests that copy the implementation’s internal call structure can fail during harmless refactoring.</p>
+      <p>Example: inject the email-sending function so the test can observe the notification without sending a real email:</p>
+      <pre><code>def register_user(email, send_email):
+    # Save the user, then notify them.
+    send_email(email, "Welcome!")
+
+
+def test_register_user_sends_welcome_message():
+    sent = []
+
+    def fake_send_email(address, message):
+        sent.append((address, message))
+
+    register_user("ada@example.com", fake_send_email)
+
+    assert sent == [("ada@example.com", "Welcome!")]</code></pre>
+      <p>For an existing module that calls a dependency directly, pytest’s <code>monkeypatch</code> fixture can replace that dependency for the duration of a test. Patch the name where the code under test looks it up, and restore behavior automatically by using the fixture.</p>
+      <div class="callout warning"><strong>Be careful:</strong> a mocked test proves how your code behaves with the mock, not that the real external service works. Keep integrations isolated and test them separately where practical.</div>
+    </section>
+
+    <section id="workflow">
+      <h2>10. A reliable testing workflow</h2>
+      <ol>
+        <li>Write or identify a small piece of behavior with a clear expected result.</li>
+        <li>Write a test that describes that behavior.</li>
+        <li>Run it and check that it fails for the reason you expect. A test that never fails may not be checking what you think.</li>
+        <li>Implement or change the code.</li>
+        <li>Run the test again, then run the broader suite.</li>
+        <li>If a bug escaped, add a test that reproduces it before fixing it. Keep the test as protection against the same regression.</li>
+      </ol>
+      <p>This is often called <strong>red, green, refactor</strong>: see the relevant test fail, make it pass, then improve the design while tests stay green.</p>
+      <p>Handy commands:</p>
+      <pre><code># Run all discovered tests
+python -m pytest
+
+# Run one file or one test by name
+python -m pytest tests/test_shop.py
+python -m pytest -k "discount"
+
+# Stop at the first failure and show more detail
+python -m pytest -x -vv
+
+# Measure which lines ran (install pytest-cov separately)
+python -m pytest --cov=shop</code></pre>
+      <p>Use <code>python -m pytest</code> to run pytest through the Python interpreter in your active environment. Coverage can show unexecuted lines, but high coverage is not the same as good tests: a line can run without its result being checked.</p>
+    </section>
+
+    <section id="mistakes">
+      <h2>11. Common traps</h2>
+      <ul>
+        <li><strong>Testing only the happy path.</strong> Add the boundaries and error cases that matter to the function’s contract.</li>
+        <li><strong>Assertions that prove nothing.</strong> <code>assert result</code> only checks truthiness; prefer a specific expected value when possible.</li>
+        <li><strong>Tests that depend on each other.</strong> Each test should set up its own state and pass when run alone.</li>
+        <li><strong>Shared mutable state.</strong> Avoid one global list or database record that tests change without resetting.</li>
+        <li><strong>Overly broad exception checks.</strong> Expect the intended exception type, not any exception.</li>
+        <li><strong>Over-mocking.</strong> If a test asserts every internal call, small implementation changes can break it even while behavior remains correct.</li>
+        <li><strong>Huge tests.</strong> A failure should make it reasonably clear which behavior is wrong.</li>
+        <li><strong>Testing private details unnecessarily.</strong> Prefer stable, observable behavior over implementation trivia.</li>
+        <li><strong>Trusting a green test without checking it.</strong> Temporarily break the behavior or use a known wrong expectation to confirm that the test fails, then restore it.</li>
+      </ul>
+    </section>
+
+    <section id="exercise">
+      <h2>12. Practice exercise</h2>
+      <p>Write tests for this function. Do not change the function while you are writing the tests:</p>
+      <pre><code>def shipping_cost(subtotal):
+    if subtotal &lt; 0:
+        raise ValueError("subtotal cannot be negative")
+    if subtotal &gt;= 50:
+        return 0
+    return 5</code></pre>
+      <p>Think of a normal order, each side of the free-shipping boundary, and invalid input. A good set of tests would check:</p>
+      <ul>
+        <li>a subtotal below 50 costs 5;</li>
+        <li>a subtotal exactly 50 costs 0;</li>
+        <li>a subtotal above 50 costs 0;</li>
+        <li>a negative subtotal raises <code>ValueError</code>.</li>
+      </ul>
+      <details>
+        <summary>Show one possible solution</summary>
+        <pre><code>import pytest
+from shop import shipping_cost
+
+
+def test_shipping_cost_is_five_below_free_shipping_limit():
+    assert shipping_cost(49.99) == 5
+
+
+def test_shipping_is_free_at_limit():
+    assert shipping_cost(50) == 0
+
+
+def test_shipping_is_free_above_limit():
+    assert shipping_cost(80) == 0
+
+
+def test_negative_subtotal_is_rejected():
+    with pytest.raises(ValueError, match="cannot be negative"):
+        shipping_cost(-1)</code></pre>
+      </details>
+      <p>Run these tests against the function. Then change one comparison—for example, change <code>&gt;= 50</code> to <code>&gt; 50</code>—and rerun them. The exact-boundary test should catch the bug.</p>
+    </section>
+
+    <section id="unittest">
+      <h2>13. pytest and Python’s unittest</h2>
+      <p>Python includes <code>unittest</code> in its standard library, so it does not need to be installed. It organizes tests as classes and methods:</p>
+      <pre><code>import unittest
+from shop import total_with_tax
+
+
+class TotalWithTaxTests(unittest.TestCase):
+    def test_adds_tax(self):
+        self.assertEqual(total_with_tax(10, 0.1), 11)
+
+
+if __name__ == "__main__":
+    unittest.main()</code></pre>
+      <p>Run a unittest file with <code>python -m unittest</code>. Pytest can also discover and run many unittest-style tests. Both are valid; pytest is used throughout this guide because its plain functions and readable assertions make a gentle starting point. Use the runner and conventions already adopted by your project when there is one.</p>
+    </section>
+
+    <section>
+      <h2>Keep this mental model</h2>
+      <p>A strong test says: <em>given this meaningful situation, when I do this operation, I expect this observable result.</em> Start with small tests for real promises, run them often, and let failures guide your next step.</p>
+    </section>
+  </main>
+  <footer>Python Testing: A Practical Guide</footer>
+</body>
+</html>
